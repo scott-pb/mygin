@@ -16,10 +16,6 @@ type Engine struct {
 	RouterGroup
 }
 
-func Logger() HandlerFunc {
-	return LoggerFunc()
-}
-
 func (e *Engine) Use(middleware ...HandlerFunc) IRoutes {
 	e.RouterGroup.Use(middleware...)
 	return e
@@ -82,7 +78,7 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func Default() *Engine {
 	engine := New()
 
-	engine.Use(Logger())
+	engine.Use(Logger(), Recovery())
 
 	// Group 保存 engine 的指针
 	engine.RouterGroup.engine = engine

@@ -2,6 +2,7 @@ package mygin
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"net/http"
 )
@@ -51,6 +52,14 @@ func writeContentType(w http.ResponseWriter, value []string) {
 
 // Status 设置HTTP响应状态码。
 func (c *Context) Status(code int) {
+	if c.status > 0 && c.status != code {
+		fmt.Printf("[WARNING] Headers were already written. Wanted to override status code %d with %d\n", c.status, code)
+		return
+	}
+	//防止重复设置响应码
+	if c.status > 0 && c.status == code {
+		return
+	}
 	c.status = code
 	c.Writer.WriteHeader(code)
 }
@@ -61,29 +70,29 @@ func (c *Context) GetStatusCode() int {
 }
 
 // JSON 将值序列化为JSON并将其写入响应。
-func (c *Context) JSON(v interface{}) error {
+func (c *Context) JSON(code int, v interface{}) error {
 	writeContentType(c.Writer, []string{"application/json; charset=utf-8"})
 	encoder := json.NewEncoder(c.Writer)
 	err := encoder.Encode(v)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 	}
-	c.Status(http.StatusOK)
+	c.Status(code)
 	return err
 }
 
 // Html 将字符串以HTML形式写入响应。
-func (c *Context) Html(v string) error {
+func (c *Context) Html(code int, v string) error {
 	writeContentType(c.Writer, []string{"text/html; charset=utf-8"})
-	c.Status(http.StatusOK)
+	c.Status(code)
 	_, err := c.Writer.Write([]byte(v))
 	return err
 }
 
 // String 将字符串写入响应
-func (c *Context) String(v string) error {
+func (c *Context) String(code int, v string) error {
 	writeContentType(c.Writer, []string{"text/plain; charset=utf-8"})
-	c.Status(http.StatusOK)
+	c.Status(code)
 	_, err := c.Writer.Write([]byte(v))
 	return err
 }
