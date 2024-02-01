@@ -2,6 +2,7 @@ package mygin
 
 import (
 	"net/http"
+	"sync"
 )
 
 // HandlerFunc 定义处理函数类型
@@ -14,6 +15,7 @@ type HandlersChain []HandlerFunc
 type Engine struct {
 	Router
 	RouterGroup
+	pool sync.Pool
 }
 
 func (e *Engine) Use(middleware ...HandlerFunc) IRoutes {
@@ -61,16 +63,19 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//实例化一个下上文
-	c := &Context{
-		Request:  r,
-		Writer:   w,
-		Params:   params,
-		handlers: handlers,
-		index:    -1,
-	}
+	//从pool中取
+	c := e.pool.Get().(*Context)
+	c.Request = r
+	c.Writer = w
+	c.Params = params
+	c.handlers = handlers
+	c.index = -1
+
 	// 执行处理函数链
 	c.Next()
+
+	//归还到pool中
+	e.pool.Put(c)
 
 }
 
@@ -99,6 +104,15 @@ func New() *Engine {
 		},
 	}
 
+	engine.pool.New = func() any {
+		return &Context{
+			Request:  nil,
+			Writer:   nil,
+			Params:   make(Params, 0),
+			handlers: nil,
+			index:    -1,
+		}
+	}
 	// Group 保存 engine 的指针
 	engine.RouterGroup.engine = engine
 
