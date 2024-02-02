@@ -52,6 +52,14 @@ func writeContentType(w http.ResponseWriter, value []string) {
 
 // Status 设置HTTP响应状态码。
 func (c *Context) Status(code int) {
+	//说明发生了错误
+	if code == http.StatusInternalServerError {
+		c.Writer.(http.Flusher).Flush()
+		c.status = code
+		c.Writer.WriteHeader(code)
+		return
+	}
+
 	if c.status > 0 && c.status != code {
 		fmt.Printf("[WARNING] Headers were already written. Wanted to override status code %d with %d\n", c.status, code)
 		return

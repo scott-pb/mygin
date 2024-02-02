@@ -78,6 +78,6 @@ func (l *LogFormatterParams) LoggerFunc() HandlerFunc {
 			l.MethodColor(context.Request.Method), context.Request.Method, reset,
 			context.Request.URL.Path,
 		)
-		fmt.Println(str)
+		fmt.Print(str)
 	}
 }
